@@ -1,0 +1,130 @@
+{
+  "prompt_metadata": {
+    "identifier": "FORENSIC-RF-20260203-001",
+    "classification": "TACTICAL_FORENSIC_PROTOCOL",
+    "domain": "RF_SECURITY_ANALYSIS",
+    "version": "1.0",
+    "objective": "Detect and characterize anomalous cellular network behavior consistent with IMSI Catcher (Stingray) operations."
+  },
+  "environmental_parameters": {
+    "location_context": "Los Angeles, CA, USA",
+    "baseline_location": {
+      "latitude": 34.0522,
+      "longitude": -118.2437,
+      "description": "Assumed user location for baseline RF environment."
+    },
+    "enclosure_specifications": {
+      "type": "RF-shielded enclosure",
+      "shielding_effectiveness_dB": ">= 80dB",
+      "frequency_range": "100MHz - 6GHz"
+    },
+    "timestamp_utc": "2026-02-03T21:00:00Z"
+  },
+  "forensic_objectives": {
+    "primary": "Detect active IMSI Catchers by identifying anomalies in cellular network parameters.",
+    "secondary": [
+      "Establish a baseline RF signature for the device in a controlled environment.",
+      "Characterize the ambient cellular network environment at the user's location.",
+      "Identify suspicious cell towers or network behavior (e.g., forced downgrades, lack of encryption).",
+      "Log all cellular protocol messages for offline analysis."
+    ]
+  },
+  "methodology": {
+    "tools": [
+      {
+        "name": "SnoopSnitch",
+        "purpose": "IMSI Catcher detection and cellular security analysis.",
+        "configuration": "Active tests enabled, all logging options on."
+      },
+      {
+        "name": "CellGuard",
+        "purpose": "Continuous monitoring of cellular network parameters for anomalies.",
+        "configuration": "Alerts configured for all threat indicators."
+      },
+      {
+        "name": "Device API / Engineering Mode",
+        "purpose": "Direct access to detailed cellular information (Cell ID, LAC, TAC, signal strength, etc.)."
+      }
+    ],
+    "procedure_overview": "A multi-phase procedure involving baseline measurement within an RF-shielded enclosure, followed by ambient environment scanning and active testing."
+  },
+  "execution_phases": [
+    {
+      "phase": 1,
+      "title": "Setup and Baseline",
+      "steps": [
+        "Place the target device inside the RF-shielded enclosure.",
+        "Install and configure SnoopSnitch and CellGuard.",
+        "Enable airplane mode, then re-enable cellular to force a clean network scan.",
+        "Wait for the device to register on a network (if any signal penetrates).",
+        "Run SnoopSnitch baseline tests and record all network parameters. This is the 'clean' baseline. Expect no or very weak signals."
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "Ambient Environment Scan",
+      "steps": [
+        "Remove the device from the enclosure.",
+        "At the specified location, disable and re-enable the cellular radio.",
+        "Allow the device to register on the network.",
+        "Use SnoopSnitch and device APIs to log all visible cell towers and their parameters for at least 15 minutes. Capture MCC, MNC, LAC, TAC, Cell ID, frequency bands, and signal strength."
+      ]
+    },
+    {
+      "phase": 3,
+      "title": "Active Anomaly Detection",
+      "steps": [
+        "Run SnoopSnitch active tests (e.g., silent SMS, location requests).",
+        "Monitor CellGuard for real-time alerts.",
+        "Trigger different network activities (e.g., placing a call, starting a data session) and log any changes in network parameters."
+      ]
+    },
+    {
+      "phase": 4,
+      "title": "Data Analysis and Correlation",
+      "steps": [
+        "Compare the ambient network data from Phase 2 with the clean baseline from Phase 1.",
+        "Analyze the collected data for known IMSI Catcher indicators (see threat_indicators).",
+        "Correlate any anomalies with alerts from SnoopSnitch or CellGuard.",
+        "Cross-reference suspicious Cell IDs with public databases (e.g., OpenCelliD) to check for legitimacy."
+      ]
+    }
+  ],
+  "threat_indicators": [
+    {
+      "indicator": "Forced 2G/3G Downgrade",
+      "description": "Device is forced from 4G/5G to a less secure 2G/3G network, where interception is easier.",
+      "snoopsnitch_test": "Network technology tests."
+    },
+    {
+      "indicator": "Lack of Encryption",
+      "description": "The A5/1 encryption algorithm is used, or encryption is disabled entirely (A5/0).",
+      "snoopsnitch_test": "Encryption algorithm detection."
+    },
+    {
+      "indicator": "Anomalous Cell Parameters",
+      "description": "Cell tower broadcasts unusual parameters, such as a LAC/TAC that doesn't match the geographical area, or capabilities that don't match the carrier.",
+      "snoopsnitch_test": "Network information and cell survey."
+    },
+    {
+      "indicator": "Silent SMS / Paging Requests",
+      "description": "Device receives Type 0 SMS (silent SMS) or frequent paging requests, used to pinpoint location.",
+      "snoopsnitch_test": "Silent SMS detection."
+    },
+    {
+      "indicator": "Rejection of Service",
+      "description": "Device is rejected by the legitimate network and then connects to a rogue tower.",
+      "snoopsnitch_test": "Tracking Area Update (TAU) rejection analysis."
+    }
+  ],
+  "reporting_schema": {
+    "file_format": "JSON",
+    "fields": {
+      "timestamp": "ISO 8601",
+      "event_type": "e.g., Cell_Scan, Anomaly_Detected, Active_Test",
+      "data": "Object containing relevant data for the event type.",
+      "threat_level": "e.g., None, Low, Medium, High, Critical",
+      "threat_description": "Description of the detected threat, if any."
+    }
+  }
+}
